@@ -1,0 +1,102 @@
+<template>
+  <v-app style="background: #12171a;">
+    <v-app-bar v-if="notHomePage()" flat fixed clipped-left app color="#263238" dark>
+      <v-toolbar-title class="ml-0 pl-4">
+        <nuxt-link style="text-decoration:none" to="/">
+          <span class="display-1" style="color:#FFF; font-weight: bold">OAS</span>
+          <span class="display-1" style="color:cyan">CHAIN</span>
+        </nuxt-link>
+      </v-toolbar-title>
+
+      <div class="flex-grow-1"></div>
+      <div style="height: 70px;
+  line-height: 70px;
+  text-align: center;
+  ">
+        <p
+          style="display: inline-block;
+  color: #4CAF50;"
+          class="text-xs-center"
+        >connected ok to infura.io</p>
+      </div>
+    </v-app-bar>
+    <v-content v-cloak>
+      <Nuxt />
+    </v-content>
+    <v-footer color="#263238" dark app>
+      <a
+        disabled
+        style="text-decoration: none; color: #b0bec5"
+        text
+        href="https://x"
+      >oaschain.com &copy; 2019</a>&nbsp;
+    </v-footer>
+  </v-app>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      search: "",
+      title: "Web3 Wallet"
+    };
+  },
+  methods: {
+    toSearchResolver() {
+      if (this.search.length < 1) {
+        this.$toast.error("What are you searching for ?");
+        return;
+      }
+      if (this.search.length == 8) {
+        this.$router.push("/prescription/" + this.search);
+        return;
+      }
+      if (this.search.length == 42) {
+        this.$router.push("/address/" + this.search);
+        return;
+      }
+
+      this.$toast.error("Invalid Prescription ID or address");
+    },
+    goToUrl(url) {
+      window.open(url, "_blank");
+    },
+    notHomePage() {
+      if (this.$route.path == "/" || this.$route.path == "/home") {
+        return false;
+      } else {
+        return true;
+      }
+    }
+  }
+};
+</script>
+<style scoped>
+#styled-input {
+  height: 48px;
+  width: 48px;
+}
+.styled-input label[for] {
+  height: 48px;
+}
+.v-navigation-drawer > .list:not(.list--dense) .list__tile {
+  font-size: 17px;
+}
+.avatar {
+  max-width: 75px;
+}
+/* .list__tile--active.list__tile.list__tile--link {
+} */
+a.nuxt-link-exact-active.list__tile--active.list__tile.list__tile--link {
+  font-weight: 900 !important;
+  color: #3f51b5 !important;
+}
+.v-list-item {
+  border-left: 10px solid transparent;
+}
+.v-list-item--active {
+  color: black;
+  border-left: 10px solid red;
+}
+</style>

@@ -1,0 +1,40 @@
+{
+  "name": "web3webwallet",
+  "version": "1.0.0",
+  "description": "ETH & ERC20 Web Wallet",
+  "author": "dan",
+  "private": true,
+  "scripts": {
+    "lint": "eslint --ext .js,.vue --ignore-path .gitignore .",
+    "precommit": "npm run lint",
+    "dev": "nuxt",
+    "build": "nuxt build",
+    "start": "nuxt start",
+    "generate": "nuxt generate"
+  },
+  "dependencies": {
+    "@nuxtjs/pwa": "2.6.0",
+    "@nuxtjs/toast": "3.2.1",
+    "@nuxtjs/vuetify": "^1.5.0",
+    "@nuxtjs/axios": "5.3.6",
+    "nuxt": "2.8.1",
+    "web3": "^1.0.0-beta.55"
+  },
+  "devDependencies": {
+    "stylus": "^0.54.5",
+    "stylus-loader": "^3.0.2",
+    "@nuxtjs/eslint-config": "^1.1.2",
+    "@nuxtjs/eslint-module": "^1.0.0",
+    "babel-eslint": "^10.0.2",
+    "eslint": "^6.1.0",
+    "eslint-config-standard": ">=13.0.1",
+    "eslint-plugin-import": ">=2.18.2",
+    "eslint-plugin-jest": ">=22.15.1",
+    "eslint-plugin-node": ">=9.1.0",
+    "eslint-plugin-nuxt": ">=0.4.3",
+    "eslint-plugin-promise": ">=4.2.1",
+    "eslint-plugin-standard": ">=4.0.0",
+    "eslint-plugin-vue": "^5.2.3",
+    "nodemon": "^1.19.1"
+  }
+}
