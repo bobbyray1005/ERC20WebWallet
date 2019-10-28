@@ -28,7 +28,7 @@
         disabled
         style="text-decoration: none; color: #b0bec5"
         text
-        href="https://x"
+        href="https://oaschain.com"
       >oaschain.com &copy; 2019</a>&nbsp;
     </v-footer>
   </v-app>
@@ -43,22 +43,6 @@ export default {
     };
   },
   methods: {
-    toSearchResolver() {
-      if (this.search.length < 1) {
-        this.$toast.error("What are you searching for ?");
-        return;
-      }
-      if (this.search.length == 8) {
-        this.$router.push("/prescription/" + this.search);
-        return;
-      }
-      if (this.search.length == 42) {
-        this.$router.push("/address/" + this.search);
-        return;
-      }
-
-      this.$toast.error("Invalid Prescription ID or address");
-    },
     goToUrl(url) {
       window.open(url, "_blank");
     },
