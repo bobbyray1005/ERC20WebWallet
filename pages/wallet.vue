@@ -69,6 +69,29 @@
               :src="`https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${address}&choe=UTF-8`"
             />
           </v-row>
+
+          <v-row v-show="sendEther" justify="center">
+            <v-form @submit.prevent="toWallet">
+              <v-row justify="center">
+                <v-col cols="12" md="7" sm="6">
+                  <v-text-field
+                    solo
+                    style="max-width:800px"
+                    v-model="privateKey"
+                    type="text"
+                    label="Private Key"
+                  />
+                  <v-btn
+                    id="styled-input"
+                    class="styled-input"
+                    block
+                    color="green"
+                    type="submit"
+                  >Continue</v-btn>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-row>
         </v-container>
       </v-flex>
     </v-layout>
@@ -79,6 +102,7 @@
 export default {
   data() {
     return {
+      sendEther: true,
       showQRCode: false,
       privateKey: "",
       address: "",
