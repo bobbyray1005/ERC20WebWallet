@@ -83,7 +83,7 @@ export default {
         );
         return;
       }
-      localStorage.setItem("privateKey", this.privateKey);
+      localStorage.setItem("privateKey", this.privateKey.trim());
       this.$router.push("wallet");
     },
     gotoCreate() {
