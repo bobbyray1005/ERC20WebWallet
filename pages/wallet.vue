@@ -26,7 +26,7 @@
                 </v-list-item>
 
                 <v-card-actions>
-                  <v-btn @click="toggleSendETH()" text>SEND</v-btn>
+                  <v-btn @click="toggleSendERC20()" text>SEND</v-btn>
                   <v-btn @click="toggleShowQRCode()" text>RECEIVE</v-btn>
                 </v-card-actions>
               </v-card>
@@ -47,7 +47,7 @@
                 </v-list-item>
 
                 <v-card-actions>
-                  <v-btn text>SEND</v-btn>
+                  <v-btn @click="toggleSendERC20()" text>SEND</v-btn>
                   <v-btn @click="toggleShowQRCode()" text>RECEIVE</v-btn>
                 </v-card-actions>
               </v-card>
@@ -106,7 +106,56 @@
                       class="styled-input"
                       block
                       type="submit"
-                    >SEND</v-btn>
+                    >SEND ETH</v-btn>
+                  </v-col>
+                </v-row>
+              </v-form>
+            </div>
+          </v-row>
+
+          <v-row v-show="sendERC20Div" justify="center">
+            <div class="col-12">
+              <v-row justify="center">
+                <p class="display-1 ml-5 text-xs-center">Send OAS</p>
+              </v-row>
+              <v-form @submit.prevent="sendERC20">
+                <v-row justify="center">
+                  <v-col cols="12" md="7" sm="6">
+                    <kbd class="white--text mb-3 mt-5">To Address</kbd>
+                    <v-text-field
+                      solo
+                      style="max-width:800px"
+                      v-model="toAddress"
+                      type="text"
+                      label="To Address"
+                    />
+                    <kbd class="white--text mb-3 mt-5">Amount OAS</kbd>
+                    <v-text-field
+                      solo
+                      style="max-width:800px"
+                      v-model="amountOAS"
+                      type="text"
+                      label="Amount OAS"
+                    />
+
+                    <v-slider
+                      v-model="gasPrice"
+                      class="mt-5 mb-5"
+                      :color="ex1.color"
+                      :tick-labels="gasPriceLabels"
+                      :max="2"
+                      step="1"
+                      label="Gas Price"
+                      ticks="always"
+                      tick-size="4"
+                    ></v-slider>
+                    <v-btn
+                      id="styled-input"
+                      color="green"
+                      class="styled-input"
+                      block
+                      type="submit"
+                    >SEND OAS</v-btn>
                   </v-col>
                 </v-row>
               </v-form>
@@ -124,11 +173,13 @@ import erc20TokenABI from "../helpers/erc20abi";
 export default {
   data() {
     return {
-      sendEtherDiv: true,
+      sendERC20Div: false,
+      sendEtherDiv: false,
       ethBalance: null,
       erc20Balance: null,
       toAddress: "0x...",
       amountETH: 0,
+      amountOAS: 0,
       amountWei: 0,
       gasPrice: 1,
       showQRCode: false,
@@ -178,6 +229,9 @@ export default {
         this.$toast.error("Invalid amount");
         return;
       }
+    },
+    sendERC20() {
+      console.log("sending erc20");
     },
     async updateBalances() {
       // ETH Balance
@@ -237,7 +291,7 @@ export default {
     },
     toggleSendERC20() {
       this.showQRCode = false;
-      this.sendEtherDiv = !this.sendEtherDiv;
+      this.sendERC20Div = !this.sendERC20Div;
     }
   }
 };
