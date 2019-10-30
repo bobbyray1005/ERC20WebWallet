@@ -8,7 +8,7 @@
             <img
               class="text-xs-center"
               style="text-align: center; width:200px"
-              src="@/assets/oaschainlogo.png"
+              src="../assets/oaschain-logo.png"
             />
           </v-row>
           <v-row justify="center">

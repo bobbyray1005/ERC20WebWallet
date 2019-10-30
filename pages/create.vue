@@ -14,17 +14,21 @@
           <v-form class="mt-5" @submit.prevent="toSearchResolver">
             <v-row justify="center">
               <v-col cols="12" md="7" sm="6">
+                <kbd class="yellow black--text mb-3">Address</kbd>
                 <v-text-field
                   style="max-width:800px"
                   v-model="address"
                   type="text"
+                  solo
                   label="Address"
                 />
+                <kbd class="yellow black--text mb-3 mt-5">Private Key</kbd>
                 <v-textarea
                   rows="2"
                   style="max-width:800px"
                   v-model="privateKey"
                   type="text"
+                  solo
                   label="Private Key"
                 />
                 <p style="color: #78909c; text-align: center" class="text-xs-center">
@@ -64,6 +68,7 @@
 </template>
 
 <script>
+import web3 from "../helpers/web3";
 export default {
   data() {
     return {
@@ -75,7 +80,7 @@ export default {
   },
   mounted() {
     this.isMounted = true;
-    var account = window.web3.eth.accounts.create();
+    var account = web3.eth.accounts.create();
     this.privateKey = account.privateKey;
     this.address = account.address;
   },

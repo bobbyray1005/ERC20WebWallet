@@ -44,7 +44,6 @@ export default {
    ** Plugins to load before mounting the App
    */
   plugins: [
-    "~/plugins/web3.js"
   ],
   axios: {
     baseURL: process.env.baseUrl,
