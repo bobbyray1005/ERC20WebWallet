@@ -4,8 +4,7 @@
       <v-flex style="max-width:800px">
         <v-container>
           <v-row justify="center">
-            <p class="pa-1 text-xs-center">{{address}}</p>
-            <v-btn small outlined class="ml-5 text-xs-center">Verify on Etherscan</v-btn>
+            <p class="pa-1 text-xs-center">Address: {{address}}</p>
           </v-row>
 
           <v-row class="mb-6">
@@ -26,7 +25,7 @@
                 </v-list-item>
 
                 <v-card-actions>
-                  <v-btn @click="toggleSendERC20()" text>SEND</v-btn>
+                  <v-btn @click="toggleSendETH()" text>SEND</v-btn>
                   <v-btn @click="toggleShowQRCode()" text>RECEIVE</v-btn>
                 </v-card-actions>
               </v-card>
@@ -90,7 +89,7 @@
                     />
 
                     <v-slider
-                      v-model="gasPrice"
+                      v-model="gasPriceSlider"
                       class="mt-5 mb-5"
                       :color="ex1.color"
                       :tick-labels="gasPriceLabels"
@@ -100,6 +99,7 @@
                       ticks="always"
                       tick-size="4"
                     ></v-slider>
+                    <p class="subtitle-1 grey--text">Estimated Fee: {{computedGasPriceETH}} ETH</p>
                     <v-btn
                       id="styled-input"
                       color="green"
@@ -139,7 +139,7 @@
                     />
 
                     <v-slider
-                      v-model="gasPrice"
+                      v-model="gasPriceSlider"
                       class="mt-5 mb-5"
                       :color="ex1.color"
                       :tick-labels="gasPriceLabels"
@@ -149,6 +149,7 @@
                       ticks="always"
                       tick-size="4"
                     ></v-slider>
+                    <p class="subtitle-1 grey--text">Estimated Fee: {{computedGasPriceETH}} ETH</p>
                     <v-btn
                       id="styled-input"
                       color="green"
@@ -161,6 +162,21 @@
               </v-form>
             </div>
           </v-row>
+
+          <v-row v-if="txHash" justify="center">
+            <kbd class="mt-5 pa-1 text-xs-center">Transaction hash: {{txHash}}</kbd>
+
+            <v-btn
+              @click="toEtherScanTxHash(txHash)"
+              small
+              outlined
+              class="mt-5 text-xs-center"
+            >Verify on Etherscan</v-btn>
+          </v-row>
+
+          <v-row v-if="isTxConfirmed" justify="center">
+            <kbd class="green mt-5 pa-1 text-xs-center">Transaction successfully confirmed!</kbd>
+          </v-row>
         </v-container>
       </v-flex>
     </v-layout>
@@ -169,6 +185,7 @@
 
 <script>
 import web3 from "../helpers/web3";
+const Tx = require("ethereumjs-tx").Transaction;
 import erc20TokenABI from "../helpers/erc20abi";
 export default {
   data() {
@@ -177,28 +194,47 @@ export default {
       sendEtherDiv: false,
       ethBalance: null,
       erc20Balance: null,
-      toAddress: "0x...",
-      amountETH: 0,
-      amountOAS: 0,
-      amountWei: 0,
-      gasPrice: 1,
+      toAddress: "0x000000dE5F9e90CE604Da5FD78ACd6FAE789eCCA",
+      amountETH: 0.001,
+      amountOAS: 1.01,
+      gasPriceSlider: 1,
       showQRCode: false,
-      privateKey: "",
       address: "",
       qrCodeSize: 300,
       totalOAS: 0,
       isMounted: false,
       estimateGas: 0,
+      estimateGasETH: 0,
       gasPriceLabels: ["Slow", "Normal", "Fast"],
-      ex1: { label: "color", val: 1, color: "blue darken-3" }
+      ex1: { label: "color", val: 1, color: "blue darken-3" },
+      account: null,
+      txHash:
+        "0x13156125529acf7ad6177cd3ffdd56d5ca8c5ca9167746c205a53790970576bf",
+      isTxConfirmed: true
     };
+  },
+  computed: {
+    computedGasPrice: function() {
+      if (this.gasPriceSlider == 0) {
+        return (this.estimateGas * 50) / 100;
+      }
+      if (this.gasPriceSlider == 1) {
+        return this.estimateGas;
+      }
+      if (this.gasPriceSlider == 2) {
+        return (this.estimateGas * 150) / 100;
+      }
+    },
+    computedGasPriceETH: function() {
+      return web3.utils.fromWei(this.computedGasPrice.toString(), "ether");
+    }
   },
   mounted() {
     this.privateKey = localStorage.getItem("privateKey");
-    console.log("Private Key Loaded OK");
-    var account = web3.eth.accounts.privateKeyToAccount(this.privateKey);
-    this.privateKey = account.privateKey;
-    this.address = account.address;
+    this.account = web3.eth.accounts.privateKeyToAccount(this.privateKey);
+
+    this.address = this.account.address;
+    this.estimateTheGas();
 
     var self = this;
     self.updateBalances();
@@ -207,31 +243,138 @@ export default {
     }, 5000);
   },
   methods: {
-    estimateGas() {
+    estimateTheGas() {
       web3.eth
         .estimateGas({
           from: this.address,
-          to: this.toAddress,
+          to: "0x0000000000000000000000000000000000000000",
           value: this.amountWei
         })
-        .then(val => (this.estimateGas = val));
+        .then(val => {
+          this.estimateGas = val;
+          this.estimateGasETH = web3.utils.fromWei(val.toString(), "ether");
+        });
     },
     verifyEtherscan() {
       window.open("https://etherscan.io/address/" + this.address, "_blank");
     },
     sendEther() {
       console.log("sending ether...");
+      this.isTxConfirmed = false;
+      this.txHash = "";
+
       if (this.toAddress.length != 42) {
-        this.$toast.error("Invalid sending ETH Address");
+        this.$toast.error("Invalid receipient ETH Address");
         return;
       }
       if (this.amountETH <= 0) {
         this.$toast.error("Invalid amount");
         return;
       }
+      if (this.amountETH > this.ethBalance) {
+        this.$toast.error("seems you don't have enough balance");
+      }
+
+      console.log("sending with gas price = ", this.computedGasPrice);
+      web3.eth.getTransactionCount(this.address).then(txCount => {
+        const rawTx = {
+          nonce: web3.utils.toHex(txCount),
+          gasLimit: web3.utils.toHex(200000),
+          gasPrice: web3.utils.toHex((this.computedGasPrice * 1000).toString()),
+          to: this.toAddress,
+          from: this.address,
+          value: web3.utils.toHex(
+            web3.utils.toWei(this.amountETH.toString(), "ether")
+          )
+        };
+
+        const transaction = new Tx(rawTx, { chain: "rinkeby" }); //transaction = new Tx(txData, {'chain':'mainnet'});
+        transaction.sign(
+          new Buffer(this.account.privateKey.substring(2), "hex")
+        );
+        var self = this;
+        web3.eth
+          .sendSignedTransaction("0x" + transaction.serialize().toString("hex"))
+          .on("transactionHash", function(txHash) {
+            self.txHash = txHash;
+          })
+          .on("receipt", function(receipt) {
+            console.log("receipt:" + receipt);
+          })
+          .on("confirmation", function(confirmationNumber, receipt) {
+            console.log("confirmationNumber :", confirmationNumber);
+            console.log("receipt :", receipt);
+            if (confirmationNumber >= 1) {
+              self.isTxConfirmed = true;
+            }
+          })
+          .on("error", function(error) {
+            console.log("error sending ETH", error);
+            self.$toast.error("error sending ETH.");
+          });
+      });
     },
     sendERC20() {
       console.log("sending erc20");
+      this.isTxConfirmed = false;
+      this.txHash = "";
+
+      if (this.toAddress.length != 42) {
+        this.$toast.error("Invalid receipient ETH Address");
+        return;
+      }
+      if (this.amountETH <= 0) {
+        this.$toast.error(
+          "You need to have some ETH to pay for the transaction fees"
+        );
+        return;
+      }
+      if (this.amountOAS > this.erc20Balance) {
+        this.$toast.error("seems you don't have enough balance");
+      }
+
+      web3.eth.getTransactionCount(this.address).then(nonce => {
+        var contract = new web3.eth.Contract(
+          erc20TokenABI,
+          "0x7ec133d17f253bf759d58882bf9ff18fddcf2155" //Andy's Token
+        );
+
+        var tokenAmount = Number(this.amountOAS) * Math.pow(10, 18); // 18 decimals, hardcoded
+        let data = contract.methods
+          .transfer(this.toAddress, tokenAmount.toString())
+          .encodeABI();
+        let rawTx = {
+          nonce: web3.utils.toHex(nonce),
+          gasLimit: web3.utils.toHex(200000),
+          gasPrice: web3.utils.toHex((this.computedGasPrice * 100).toString()),
+          to: "0x7ec133d17f253bf759d58882bf9ff18fddcf2155", // Andy's Token
+          value: "0x00",
+          data: data
+        };
+
+        const transaction = new Tx(rawTx, { chain: "rinkeby" }); //transaction = new Tx(txData, {'chain':'mainnet'});
+        transaction.sign(
+          new Buffer(this.account.privateKey.substring(2), "hex")
+        );
+        var self = this;
+        web3.eth
+          .sendSignedTransaction("0x" + transaction.serialize().toString("hex"))
+          .on("transactionHash", function(txHash) {
+            self.txHash = txHash;
+          })
+          .on("receipt", function(receipt) {
+            console.log("receipt:" + receipt);
+          })
+          .on("confirmation", function(confirmationNumber, receipt) {
+            if (confirmationNumber >= 1) {
+              self.isTxConfirmed = true;
+            }
+          })
+          .on("error", function(error) {
+            console.log("error sending erc20 token", error);
+            self.$toast.error("error sending token.");
+          });
+      });
     },
     async updateBalances() {
       // ETH Balance
@@ -249,49 +392,53 @@ export default {
 
       var self = this;
       contract.methods
-        .balanceOf("0x000000dE5F9e90CE604Da5FD78ACd6FAE789eCCA")
+        .balanceOf(this.address)
         .call()
         .then(function(result) {
           self.erc20Balance = Number(result) / Math.pow(10, 18); //18 decimals hardcoded
           self.erc20Balance = self.erc20Balance.toFixed(3);
         });
-
-      // // Call balanceOf function
-      // contract.balanceOf(walletAddress, (error, balance) => {
-      //   // Get decimals
-      //   contract.decimals((error, decimals) => {
-      //     // calculate a balance
-      //     balance = balance.div(10 ** decimals);
-      //     console.log(balance.toString());
-      //   });
-      // });
-      // decimals = promisify(cb => tokenContract.decimals(cb));
-      // balance = promisify(cb => tokenContract.balanceOf(address, cb));
-      // name = promisify(cb => tokenContract.name(cb));
-      // symbol = promisify(cb => tokenContract.symbol(cb));
-
-      // try {
-      //   adjustedBalance = (await balance) / Math.pow(10, await decimals);
-      //   console.log("Adjusted Balance = ", adjustedBalance);
-
-      //   var ssymbol = await symbol;
-      //   var sname = await name;
-      //   console.log(ssymbol + " " + sname);
-      // } catch (error) {
-      //   this.$toast.error(error);
-      // }
     },
     toggleShowQRCode() {
       this.sendEtherDiv = false;
+      this.sendERC20Div = false;
       this.showQRCode = !this.showQRCode;
     },
     toggleSendETH() {
       this.showQRCode = false;
+      this.sendERC20Div = false;
       this.sendEtherDiv = !this.sendEtherDiv;
     },
     toggleSendERC20() {
       this.showQRCode = false;
+      this.sendEtherDiv = false;
       this.sendERC20Div = !this.sendERC20Div;
+    },
+    async getConfirmations(txHash) {
+      try {
+        const trx = await web3.eth.getTransaction(txHash);
+        const currentBlock = await web3.eth.getBlockNumber();
+        return trx.blockNumber === null ? 0 : currentBlock - trx.blockNumber;
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    confirmEtherTransaction(txHash, confirmations = 1) {
+      setTimeout(async () => {
+        const trxConfirmations = await this.getConfirmations(txHash);
+        if (trxConfirmations >= confirmations) {
+          this.$toast.success("Transaction successfully confirmed");
+          this.isTxConfirmed = true;
+          return;
+        }
+        return this.confirmEtherTransaction(txHash, confirmations);
+      }, 5000);
+    },
+    toEtherScanAddress(address) {
+      window.open("https://rinkeby.etherscan.io/address/" + address, "_blank");
+    },
+    toEtherScanTxHash(txHash) {
+      window.open("https://rinkeby.etherscan.io/tx/" + txHash, "_blank");
     }
   }
 };
