@@ -74,6 +74,11 @@ export default {
   },
   mounted() {
     this.isMounted = true;
+    if (localStorage.hasOwnProperty("privateKey")) {
+      console.log("localstorage has the private key!");
+    } else {
+      console.log("localstorage DOES NOT have private key!");
+    }
   },
   methods: {
     toWallet() {

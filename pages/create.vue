@@ -11,7 +11,50 @@
             </p>
           </v-row>
 
-          <v-form class="mt-5" @submit.prevent="toSearchResolver">
+          <v-row justify="center">
+            <div class="col-12">
+              <v-form @submit.prevent="generateNewAccount">
+                <v-row justify="center">
+                  <v-col cols="12" md="7" sm="6">
+                    <kbd class="white--text mb-3 mt-5">Pick a Password</kbd>
+                    <v-text-field
+                      solo
+                      style="max-width:800px"
+                      v-model="password"
+                      type="password"
+                      label="Password"
+                    />
+                    <kbd class="white--text mb-3 mt-1">Repeat Password</kbd>
+                    <v-text-field
+                      solo
+                      style="max-width:800px"
+                      v-model="repeatPassword"
+                      type="password"
+                      label="Repeat Password"
+                    />
+
+                    <v-radio-group row v-model="languageChoice" :mandatory="true">
+                      <v-radio label="English" value="english"></v-radio>
+                      <v-radio label="中文(简体)" value="chinese_simplified"></v-radio>
+                      <v-radio label="中文(繁體)" value="chinese_traditional"></v-radio>
+                      <v-radio label="한국어" value="korean"></v-radio>
+                      <v-radio label="日本語" value="japanese"></v-radio>
+                    </v-radio-group>
+
+                    <v-btn
+                      id="styled-input"
+                      color="green"
+                      class="mt-5 styled-input"
+                      block
+                      type="submit"
+                    >CREATE NEW WALLET</v-btn>
+                  </v-col>
+                </v-row>
+              </v-form>
+            </div>
+          </v-row>
+
+          <v-form v-if="showMnemonicDiv" class="mt-5" @submit.prevent="toSearchResolver">
             <v-row justify="center">
               <v-col cols="12" md="7" sm="6">
                 <kbd class="yellow black--text mb-3">Address</kbd>
@@ -22,17 +65,17 @@
                   solo
                   label="Address"
                 />
-                <kbd class="yellow black--text mb-3 mt-5">Private Key</kbd>
+                <kbd class="yellow black--text mb-3 mt-5">Mnemonic</kbd>
                 <v-textarea
-                  rows="2"
+                  rows="3"
                   style="max-width:800px"
-                  v-model="privateKey"
+                  v-model="mnemonic"
                   type="text"
                   solo
-                  label="Private Key"
+                  label="Mnemonic"
                 />
                 <p style="color: #78909c; text-align: center" class="text-xs-center">
-                  Save your private key using a password manager
+                  Save your mnemonic using a password manager
                   <br />like 1password, last pass etc.
                 </p>
               </v-col>
@@ -69,12 +112,25 @@
 
 <script>
 import web3 from "../helpers/web3";
+import {
+  generateMnemonic,
+  mnemonicToSeed,
+  shortenMnemonic
+} from "../helpers/bip39";
+var hdkey = require("ethereumjs-wallet/hdkey");
+var ethUtil = require("ethereumjs-util");
+
 export default {
   data() {
     return {
+      showMnemonicDiv: false,
       saveCheckbox: false,
       privateKey: "",
+      languageChoice: "english",
       address: "",
+      mnemonic: "",
+      password: "123123123",
+      repeatPassword: "123123123",
       isMounted: false
     };
   },
@@ -85,6 +141,32 @@ export default {
     this.address = account.address;
   },
   methods: {
+    generateNewAccount() {
+      console.log("generating a new account....");
+      if (this.password.length < 8) {
+        this.$toast.error("Please make at least a 8 character password");
+        return;
+      }
+      if (this.password !== this.repeatPassword) {
+        this.$toast.error("Passwords don't match");
+        return;
+      }
+
+      this.showMnemonicDiv = true;
+      this.mnemonic = generateMnemonic(this.languageChoice, 12);
+
+      let seed = mnemonicToSeed(this.mnemonic, this.password);
+
+      const pubKey = ethUtil.privateToPublic(
+        hdkey
+          .fromMasterSeed(seed)
+          .derivePath(`m/44'/60'/0'/0/0`)
+          .getWallet()
+          .getPrivateKey()
+      );
+      const addr = ethUtil.publicToAddress(pubKey).toString("hex");
+      this.address = ethUtil.toChecksumAddress(addr);
+    },
     backToHome() {
       if (!this.saveCheckbox) {
         this.$toast.error("Please tick the checkbox...");
