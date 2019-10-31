@@ -242,6 +242,9 @@ export default {
       self.updateBalances();
     }, 5000);
   },
+  ready() {
+    window.addEventListener("beforeunload", this.leaving);
+  },
   methods: {
     estimateTheGas() {
       web3.eth
@@ -440,6 +443,10 @@ export default {
     toEtherScanTxHash(txHash) {
       window.open("https://rinkeby.etherscan.io/tx/" + txHash, "_blank");
     }
+  },
+  leaving: function() {
+    console.log("leaving called!");
+    localStorage.removeItem("password");
   }
 };
 </script>

@@ -14,7 +14,7 @@
           <v-row justify="center">
             <p class="display-3 text-xs-center">
               <span style="font-weight:bold">OAS</span>
-              <span style="color:cyan;">CHAIN</span>
+              <span style="color:#00afcc;">CHAIN</span>
             </p>
           </v-row>
 
@@ -38,15 +38,44 @@
             <p style="color: #78909c" class="text-xs-center">or access existing</p>
           </v-row>
 
-          <v-form @submit.prevent="toWallet">
+          <v-form v-if="!mnemonicPresent" @submit.prevent="toWallet">
+            <v-row justify="center">
+              <v-col cols="12" md="7" sm="6">
+                <v-text-field
+                  solo
+                  id="mnemonic"
+                  style="max-width:800px"
+                  v-model="mnemonic"
+                  type="text"
+                  label="Mnemonic"
+                />
+                <v-text-field
+                  solo
+                  style="max-width:800px"
+                  v-model="password"
+                  type="password"
+                  label="Password"
+                />
+                <v-btn
+                  id="styled-input"
+                  class="styled-input"
+                  block
+                  color="green"
+                  type="submit"
+                >Continue</v-btn>
+              </v-col>
+            </v-row>
+          </v-form>
+
+          <v-form v-if="mnemonicPresent" @submit.prevent="unlockWallet">
             <v-row justify="center">
               <v-col cols="12" md="7" sm="6">
                 <v-text-field
                   solo
                   style="max-width:800px"
-                  v-model="privateKey"
-                  type="text"
-                  label="Private Key"
+                  v-model="existingPassword"
+                  type="password"
+                  label="Password"
                 />
                 <v-btn
                   id="styled-input"
@@ -65,31 +94,59 @@
 </template>
 
 <script>
+var CryptoJS = require("crypto-js");
+
 export default {
   data() {
     return {
-      privateKey: "",
+      mnemonic: "",
+      password: "",
+      existingPassword: "",
+      mnemonicPresent: false,
       isMounted: false
     };
   },
   mounted() {
     this.isMounted = true;
-    if (localStorage.hasOwnProperty("privateKey")) {
-      console.log("localstorage has the private key!");
+    if (localStorage.hasOwnProperty("mnemonic")) {
+      this.mnemonicPresent = true;
     } else {
-      console.log("localstorage DOES NOT have private key!");
+      this.mnemonicPresent = false;
     }
   },
   methods: {
     toWallet() {
-      if (this.privateKey.length < 60) {
-        this.$toast.error(
-          "Seems that the private key is invalid. Are you sure you have the correct one ?"
-        );
+      if (this.mnemonic.length < 10) {
+        this.$toast.error("invalid mnemonic length");
         return;
       }
-      localStorage.setItem("privateKey", this.privateKey.trim());
+
+      var ciphertext = CryptoJS.AES.encrypt(
+        this.mnemonic,
+        this.password
+      ).toString();
+
+      localStorage.setItem("mnemonic", ciphertext);
+      localStorage.setItem("password", this.password); // stored temporarly
       this.$router.push("wallet");
+    },
+    unlockWallet() {
+      var ciphertext = localStorage.getItem("mnemonic");
+      try {
+        var bytes = CryptoJS.AES.decrypt(ciphertext, this.existingPassword);
+        var originalText = bytes.toString(CryptoJS.enc.Utf8);
+
+        if (originalText.length < 10) {
+          this.$toast.error("invalid password");
+        }
+
+        // all is ok, redirect to wallet
+        localStorage.setItem("password", this.existingPassword);
+        this.$router.push("wallet");
+      } catch (err) {
+        console.log("err :", err);
+        this.$toast.error("Invalid Password");
+      }
     },
     gotoCreate() {
       this.$router.push("create");

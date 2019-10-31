@@ -75,7 +75,7 @@
                   label="Mnemonic"
                 />
                 <p style="color: #78909c; text-align: center" class="text-xs-center">
-                  Save your mnemonic using a password manager
+                  Save your mnemonic & password using a password manager
                   <br />like 1password, last pass etc.
                 </p>
               </v-col>
@@ -119,6 +119,7 @@ import {
 } from "../helpers/bip39";
 var hdkey = require("ethereumjs-wallet/hdkey");
 var ethUtil = require("ethereumjs-util");
+var CryptoJS = require("crypto-js");
 
 export default {
   data() {
@@ -166,6 +167,14 @@ export default {
       );
       const addr = ethUtil.publicToAddress(pubKey).toString("hex");
       this.address = ethUtil.toChecksumAddress(addr);
+
+      // Encrypt the mnemonic
+      var ciphertext = CryptoJS.AES.encrypt(
+        this.mnemonic,
+        this.password
+      ).toString();
+
+      localStorage.setItem("mnemonic", ciphertext);
     },
     backToHome() {
       if (!this.saveCheckbox) {
