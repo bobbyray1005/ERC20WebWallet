@@ -3,8 +3,14 @@
     <v-layout align-center justify-center>
       <v-flex style="max-width:800px">
         <v-container>
-          <v-row justify="center">
-            <kbd class="ma-3 text-xs-center">{{address}}</kbd>
+          <v-row>
+            <v-col>
+              <v-card color="#fff" block outlined>
+                <v-row justify="center">
+                  <p style="color: #424242" class="ma-3 text-xs-center">{{address}}</p>
+                </v-row>
+              </v-card>
+            </v-col>
           </v-row>
 
           <v-row class="mb-6">
