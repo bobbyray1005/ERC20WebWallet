@@ -13,12 +13,6 @@
   line-height: 70px;
   text-align: center;
   ">
-        <p
-          style="display: inline-block;
-  color: #4caf50;"
-          class="text-xs-center"
-        >connected ok to infura.io</p>
-
         <v-btn @click="logout()" small outlined class="ma-3 text-xs-center">logout</v-btn>
       </div>
     </v-app-bar>

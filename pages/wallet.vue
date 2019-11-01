@@ -4,7 +4,7 @@
       <v-flex style="max-width:800px">
         <v-container>
           <v-row justify="center">
-            <p class="pa-1 text-xs-center">Address: {{address}}</p>
+            <kbd class="ma-3 text-xs-center">{{address}}</kbd>
           </v-row>
 
           <v-row class="mb-6">
@@ -55,12 +55,9 @@
 
           <v-row v-show="showQRCode" justify="center">
             <img
-              style="text-align: center; width:300px; height:300px;"
-              :src="`https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${address}&choe=UTF-8`"
+              style="text-align: center; width:250px; height:250px;"
+              :src="`https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${address}&choe=UTF-8`"
             />
-            <v-row justify="center">
-              <kbd class="mt-5 pa-1 headline text-xs-center">{{address}}</kbd>
-            </v-row>
           </v-row>
 
           <v-row v-show="sendEtherDiv" justify="center">
@@ -197,12 +194,12 @@ export default {
       ethBalance: null,
       erc20Balance: null,
       toAddress: "",
-      amountETH: 0.001,
-      amountOAS: 1.01,
+      amountETH: 0,
+      amountOAS: 0,
       gasPriceSlider: 1,
       showQRCode: false,
       address: "",
-      qrCodeSize: 300,
+      qrCodeSize: 250,
       totalOAS: 0,
       isMounted: false,
       gasCostWei: 12000000000,

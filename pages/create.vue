@@ -1,6 +1,6 @@
 
 <template>
-  <v-container fill-height>
+  <v-container>
     <v-layout align-center justify-center>
       <v-flex style="max-width:800px">
         <v-container>

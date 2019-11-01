@@ -1,13 +1,13 @@
 
 <template>
-  <v-container fill-height>
+  <v-container>
     <v-layout align-center justify-center>
       <v-flex style="max-width:800px">
         <v-container>
           <v-row justify="center">
             <img
               class="text-xs-center"
-              style="text-align: center; width:200px"
+              style="text-align: center; max-height:110px; max-width:120px"
               src="../assets/oaschain-logo.png"
             />
           </v-row>
