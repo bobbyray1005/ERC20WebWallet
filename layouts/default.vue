@@ -15,9 +15,17 @@
   ">
         <p
           style="display: inline-block;
-  color: #4CAF50;"
+  color: #4caf50;"
           class="text-xs-center"
         >connected ok to infura.io</p>
+
+         <v-btn
+              @click="logout()"
+              small
+              outlined
+              class="ma-3 text-xs-center"
+            >logout</v-btn>
+          </v-row>
       </div>
     </v-app-bar>
     <v-content v-cloak>
@@ -52,6 +60,11 @@ export default {
       } else {
         return true;
       }
+    },
+    logout(){
+      console.log("logout clicked");
+      localStorage.removeItem("privateKeyPlain");
+      window.location.href = "/";
     }
   }
 };

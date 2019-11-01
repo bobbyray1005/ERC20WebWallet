@@ -130,16 +130,13 @@ export default {
       languageChoice: "english",
       address: "",
       mnemonic: "",
-      password: "123123123",
-      repeatPassword: "123123123",
+      password: "",
+      repeatPassword: "",
       isMounted: false
     };
   },
   mounted() {
     this.isMounted = true;
-    var account = web3.eth.accounts.create();
-    this.privateKey = account.privateKey;
-    this.address = account.address;
   },
   methods: {
     generateNewAccount() {
@@ -158,23 +155,22 @@ export default {
 
       let seed = mnemonicToSeed(this.mnemonic, this.password);
 
-      const pubKey = ethUtil.privateToPublic(
-        hdkey
-          .fromMasterSeed(seed)
-          .derivePath(`m/44'/60'/0'/0/0`)
-          .getWallet()
-          .getPrivateKey()
-      );
-      const addr = ethUtil.publicToAddress(pubKey).toString("hex");
-      this.address = ethUtil.toChecksumAddress(addr);
+      this.privateKey = hdkey
+        .fromMasterSeed(seed)
+        .derivePath(`m/44'/60'/0'/0/0`)
+        .getWallet()
+        .getPrivateKey();
 
-      // Encrypt the mnemonic
+      const pubKey = ethUtil.privateToPublic(this.privateKey);
+      this.address = "0x" + ethUtil.publicToAddress(pubKey).toString("hex");
+
+      // Encrypt the privateKey
       var ciphertext = CryptoJS.AES.encrypt(
-        this.mnemonic,
+        this.privateKey.toString("hex"),
         this.password
       ).toString();
 
-      localStorage.setItem("mnemonic", ciphertext);
+      localStorage.setItem("privateKey", ciphertext);
     },
     backToHome() {
       if (!this.saveCheckbox) {

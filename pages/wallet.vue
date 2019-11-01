@@ -99,7 +99,7 @@
                       ticks="always"
                       tick-size="4"
                     ></v-slider>
-                    <p class="subtitle-1 grey--text">Estimated Fee: {{computedGasPriceETH}} ETH</p>
+                    <p class="subtitle-1 grey--text">Estimated Fee: {{computeFeesETH}} ETH</p>
                     <v-btn
                       id="styled-input"
                       color="green"
@@ -149,7 +149,7 @@
                       ticks="always"
                       tick-size="4"
                     ></v-slider>
-                    <p class="subtitle-1 grey--text">Estimated Fee: {{computedGasPriceETH}} ETH</p>
+                    <p class="subtitle-1 grey--text">Estimated Fee: {{computeFeesToken}} ETH</p>
                     <v-btn
                       id="styled-input"
                       color="green"
@@ -186,6 +186,8 @@
 <script>
 import web3 from "../helpers/web3";
 const Tx = require("ethereumjs-tx").Transaction;
+var ethUtil = require("ethereumjs-util");
+import { Constants } from "../helpers/constants";
 import erc20TokenABI from "../helpers/erc20abi";
 export default {
   data() {
@@ -194,7 +196,7 @@ export default {
       sendEtherDiv: false,
       ethBalance: null,
       erc20Balance: null,
-      toAddress: "0x000000dE5F9e90CE604Da5FD78ACd6FAE789eCCA",
+      toAddress: "",
       amountETH: 0.001,
       amountOAS: 1.01,
       gasPriceSlider: 1,
@@ -203,61 +205,58 @@ export default {
       qrCodeSize: 300,
       totalOAS: 0,
       isMounted: false,
-      estimateGas: 0,
-      estimateGasETH: 0,
+      gasCostWei: 12000000000,
+      feesETH: 0,
       gasPriceLabels: ["Slow", "Normal", "Fast"],
       ex1: { label: "color", val: 1, color: "blue darken-3" },
       account: null,
-      txHash:
-        "0x13156125529acf7ad6177cd3ffdd56d5ca8c5ca9167746c205a53790970576bf",
-      isTxConfirmed: true
+      txHash: "",
+      isTxConfirmed: false
     };
   },
   computed: {
     computedGasPrice: function() {
       if (this.gasPriceSlider == 0) {
-        return (this.estimateGas * 50) / 100;
+        return (this.gasCostWei * 50) / 100;
       }
       if (this.gasPriceSlider == 1) {
-        return this.estimateGas;
+        return this.gasCostWei;
       }
       if (this.gasPriceSlider == 2) {
-        return (this.estimateGas * 150) / 100;
+        return (this.gasCostWei * 150) / 100;
       }
     },
-    computedGasPriceETH: function() {
-      return web3.utils.fromWei(this.computedGasPrice.toString(), "ether");
+    computeFeesETH: function() {
+      return web3.utils.fromWei(
+        (this.computedGasPrice * 2100).toString(),
+        "ether"
+      );
+    },
+    computeFeesToken: function() {
+      return web3.utils.fromWei(
+        (this.computedGasPrice * 50000).toString(),
+        "ether"
+      );
     }
   },
   mounted() {
-    this.privateKey = localStorage.getItem("privateKey");
-    this.account = web3.eth.accounts.privateKeyToAccount(this.privateKey);
+    console.log("loaded contract address :", Constants.CONTRACT_ADDRESS);
 
-    this.address = this.account.address;
-    this.estimateTheGas();
+    if (!localStorage.hasOwnProperty("privateKeyPlain")) {
+      window.location.href = "/";
+      return;
+    }
+    this.privateKey = localStorage.getItem("privateKeyPlain");
 
+    const pubKey = ethUtil.privateToPublic("0x" + this.privateKey);
+    this.address = "0x" + ethUtil.publicToAddress(pubKey).toString("hex");
     var self = this;
     self.updateBalances();
     setInterval(function() {
       self.updateBalances();
     }, 5000);
   },
-  ready() {
-    window.addEventListener("beforeunload", this.leaving);
-  },
   methods: {
-    estimateTheGas() {
-      web3.eth
-        .estimateGas({
-          from: this.address,
-          to: "0x0000000000000000000000000000000000000000",
-          value: this.amountWei
-        })
-        .then(val => {
-          this.estimateGas = val;
-          this.estimateGasETH = web3.utils.fromWei(val.toString(), "ether");
-        });
-    },
     verifyEtherscan() {
       window.open("https://etherscan.io/address/" + this.address, "_blank");
     },
@@ -278,12 +277,11 @@ export default {
         this.$toast.error("seems you don't have enough balance");
       }
 
-      console.log("sending with gas price = ", this.computedGasPrice);
       web3.eth.getTransactionCount(this.address).then(txCount => {
         const rawTx = {
           nonce: web3.utils.toHex(txCount),
-          gasLimit: web3.utils.toHex(200000),
-          gasPrice: web3.utils.toHex((this.computedGasPrice * 1000).toString()),
+          gasLimit: web3.utils.toHex(21000),
+          gasPrice: web3.utils.toHex(this.computedGasPrice.toString()),
           to: this.toAddress,
           from: this.address,
           value: web3.utils.toHex(
@@ -291,10 +289,8 @@ export default {
           )
         };
 
-        const transaction = new Tx(rawTx, { chain: "rinkeby" }); //transaction = new Tx(txData, {'chain':'mainnet'});
-        transaction.sign(
-          new Buffer(this.account.privateKey.substring(2), "hex")
-        );
+        const transaction = new Tx(rawTx, { chain: "mainnet" }); //transaction = new Tx(txData, {'chain':'rinkeby'});
+        transaction.sign(new Buffer(this.privateKey, "hex"));
         var self = this;
         web3.eth
           .sendSignedTransaction("0x" + transaction.serialize().toString("hex"))
@@ -339,7 +335,7 @@ export default {
       web3.eth.getTransactionCount(this.address).then(nonce => {
         var contract = new web3.eth.Contract(
           erc20TokenABI,
-          "0x7ec133d17f253bf759d58882bf9ff18fddcf2155" //Andy's Token
+          Constants.CONTRACT_ADDRESS
         );
 
         var tokenAmount = Number(this.amountOAS) * Math.pow(10, 18); // 18 decimals, hardcoded
@@ -348,17 +344,15 @@ export default {
           .encodeABI();
         let rawTx = {
           nonce: web3.utils.toHex(nonce),
-          gasLimit: web3.utils.toHex(200000),
-          gasPrice: web3.utils.toHex((this.computedGasPrice * 100).toString()),
-          to: "0x7ec133d17f253bf759d58882bf9ff18fddcf2155", // Andy's Token
+          gasLimit: web3.utils.toHex(100000),
+          gasPrice: web3.utils.toHex(this.computedGasPrice.toString()),
+          to: Constants.CONTRACT_ADDRESS,
           value: "0x00",
           data: data
         };
 
-        const transaction = new Tx(rawTx, { chain: "rinkeby" }); //transaction = new Tx(txData, {'chain':'mainnet'});
-        transaction.sign(
-          new Buffer(this.account.privateKey.substring(2), "hex")
-        );
+        const transaction = new Tx(rawTx, { chain: "mainnet" }); //transaction = new Tx(txData, {'chain':'rinkeby'});
+        transaction.sign(new Buffer(this.privateKey, "hex"));
         var self = this;
         web3.eth
           .sendSignedTransaction("0x" + transaction.serialize().toString("hex"))
@@ -390,7 +384,7 @@ export default {
 
       var contract = new web3.eth.Contract(
         erc20TokenABI,
-        "0x7ec133d17f253bf759d58882bf9ff18fddcf2155" //Andy's Token
+        Constants.CONTRACT_ADDRESS
       );
 
       var self = this;
@@ -438,15 +432,14 @@ export default {
       }, 5000);
     },
     toEtherScanAddress(address) {
-      window.open("https://rinkeby.etherscan.io/address/" + address, "_blank");
+      window.open("https://etherscan.io/address/" + address, "_blank");
     },
     toEtherScanTxHash(txHash) {
-      window.open("https://rinkeby.etherscan.io/tx/" + txHash, "_blank");
+      window.open("https://etherscan.io/tx/" + txHash, "_blank");
     }
   },
-  leaving: function() {
-    console.log("leaving called!");
-    localStorage.removeItem("password");
+  beforeRouteLeave(to, from, next) {
+    localStorage.removeItem("privateKeyPlain");
   }
 };
 </script>

@@ -95,6 +95,9 @@
 
 <script>
 var CryptoJS = require("crypto-js");
+import { mnemonicToSeed } from "../helpers/bip39";
+var hdkey = require("ethereumjs-wallet/hdkey");
+var ethUtil = require("ethereumjs-util");
 
 export default {
   data() {
@@ -108,13 +111,14 @@ export default {
   },
   mounted() {
     this.isMounted = true;
-    if (localStorage.hasOwnProperty("mnemonic")) {
+    if (localStorage.hasOwnProperty("privateKey")) {
       this.mnemonicPresent = true;
     } else {
       this.mnemonicPresent = false;
     }
   },
   methods: {
+    // imports an existing wallet
     toWallet() {
       if (this.mnemonic.length < 10) {
         this.$toast.error("invalid mnemonic length");
@@ -126,22 +130,32 @@ export default {
         this.password
       ).toString();
 
-      localStorage.setItem("mnemonic", ciphertext);
-      localStorage.setItem("password", this.password); // stored temporarly
+      let seed = mnemonicToSeed(this.mnemonic, this.password);
+
+      var privateKey = hdkey
+        .fromMasterSeed(seed)
+        .derivePath(`m/44'/60'/0'/0/0`)
+        .getWallet()
+        .getPrivateKey();
+
+      localStorage.setItem("privateKeyPlain", privateKey.toString("hex"));
+
       this.$router.push("wallet");
     },
+    // unlocks an existing wallet
     unlockWallet() {
-      var ciphertext = localStorage.getItem("mnemonic");
+      var ciphertext = localStorage.getItem("privateKey");
       try {
         var bytes = CryptoJS.AES.decrypt(ciphertext, this.existingPassword);
         var originalText = bytes.toString(CryptoJS.enc.Utf8);
 
-        if (originalText.length < 10) {
+        if (originalText.length < 60) {
           this.$toast.error("invalid password");
+          return;
         }
 
-        // all is ok, redirect to wallet
-        localStorage.setItem("password", this.existingPassword);
+        localStorage.setItem("privateKeyPlain", originalText);
+
         this.$router.push("wallet");
       } catch (err) {
         console.log("err :", err);
