@@ -19,13 +19,7 @@
           class="text-xs-center"
         >connected ok to infura.io</p>
 
-         <v-btn
-              @click="logout()"
-              small
-              outlined
-              class="ma-3 text-xs-center"
-            >logout</v-btn>
-          </v-row>
+        <v-btn @click="logout()" small outlined class="ma-3 text-xs-center">logout</v-btn>
       </div>
     </v-app-bar>
     <v-content v-cloak>
@@ -61,7 +55,7 @@ export default {
         return true;
       }
     },
-    logout(){
+    logout() {
       console.log("logout clicked");
       localStorage.removeItem("privateKeyPlain");
       window.location.href = "/";
